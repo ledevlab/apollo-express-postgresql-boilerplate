@@ -11,87 +11,102 @@ const createToken = async (user, secret, expiresIn) => {
   });
 };
 
+// Queries
+
+const find = async (parent, args, { models }) => {
+  return await models.User.findAll();
+};
+
+const findOne = async (parent, { id }, { models }) => {
+  return await models.User.findByPk(id);
+}
+
+const me = async (parent, args, { models, me }) => {
+  if (!me) {
+    return null;
+  }
+
+  return await models.User.findByPk(me.id);
+};
+
+// Mutations
+
+const signUp = async (
+  parent,
+  { username, email, password },
+  { models, secret },
+) => {
+  const user = await models.User.create({
+    username,
+    email,
+    password,
+  });
+
+  return { token: createToken(user, secret, '30m') };
+};
+
+const signIn = async (
+  parent,
+  { login, password },
+  { models, secret },
+) => {
+  const user = await models.User.findByLogin(login);
+
+  if (!user) {
+    throw new UserInputError(
+      'No user found with this login credentials.',
+    );
+  }
+
+  const isValid = await user.validatePassword(password);
+
+  if (!isValid) {
+    throw new AuthenticationError('Invalid password.');
+  }
+
+  return { token: createToken(user, secret, '30m') };
+};
+
+const findOneAndUpdate = async (parent, { username }, { models, me }) => {
+  const user = await models.User.findByPk(me.id);
+  return await user.update({ username });
+};
+
+const findOneAndDelete = async (parent, { id }, { models }) => {
+  return await models.User.destroy({
+    where: { id },
+  });
+};
+
+const listUserMessages = async (user, args, { models }) => {
+  return await models.Message.findAll({
+    where: {
+      userId: user.id,
+    },
+  })
+};
+
 module.exports = {
   Query: {
-    users: async (parent, args, { models }) => {
-      return await models.User.findAll();
-    },
-    user: async (parent, { id }, { models }) => {
-      const users = await models.User.findAll();
-      console.log('enter', users);
-      return await models.User.findByPk(id);
-    },
-    me: async (parent, args, { models, me }) => {
-      if (!me) {
-        return null;
-      }
-
-      return await models.User.findByPk(me.id);
-    },
+    users: find,
+    user: findOne,
+    me: me,
   },
 
   Mutation: {
-    signUp: async (
-      parent,
-      { username, email, password },
-      { models, secret },
-    ) => {
-      const user = await models.User.create({
-        username,
-        email,
-        password,
-      });
-
-      return { token: createToken(user, secret, '30m') };
-    },
-
-    signIn: async (
-      parent,
-      { login, password },
-      { models, secret },
-    ) => {
-      const user = await models.User.findByLogin(login);
-
-      if (!user) {
-        throw new UserInputError(
-          'No user found with this login credentials.',
-        );
-      }
-
-      const isValid = await user.validatePassword(password);
-
-      if (!isValid) {
-        throw new AuthenticationError('Invalid password.');
-      }
-
-      return { token: createToken(user, secret, '30m') };
-    },
-
+    signUp,
+    signIn,
     updateUser: combineResolvers(
       isAuthenticated,
-      async (parent, { username }, { models, me }) => {
-        const user = await models.User.findByPk(me.id);
-        return await user.update({ username });
-      },
+      findOneAndUpdate,
     ),
-
     deleteUser: combineResolvers(
       isAdmin,
-      async (parent, { id }, { models }) => {
-        return await models.User.destroy({
-          where: { id },
-        });
-      },
+      findOneAndDelete
     ),
   },
 
   User: {
-    messages: async (user, args, { models }) => {
-      return await models.Message.findAll({
-        where: {
-          userId: user.id,
-        },
-      });
-    },
+    messages: listUserMessages
   },
 };
