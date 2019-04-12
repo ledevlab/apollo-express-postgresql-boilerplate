@@ -14,7 +14,7 @@ A full-fledged Apollo Server with Apollo Client starter project with React and E
 - performance optimizations (example of using Facebook's dataloader)
 - E2E testing
 
-## Installation
+## Getting started
 
 ```bash
 $> git clone https://github.com/ledevlab/apollo-react-native-boilerplate your_app_name
@@ -22,4 +22,11 @@ $> cd your_app_name && rm -rf .git
 $> npm install
 $> npm start
 # visit `http://localhost:8000` for GraphQL playground
+```
+
+```bash
+# run tests
+$> npm run test:run-server
+# open new term
+$> npm run test:execute-test
 ```
