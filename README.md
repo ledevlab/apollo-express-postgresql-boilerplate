@@ -30,3 +30,7 @@ $> npm run test:run-server
 # open new term
 $> npm run test:execute-test
 ```
+
+# TODO
+
+- [] add dockerfile
