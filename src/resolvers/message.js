@@ -42,7 +42,7 @@ module.exports = {
       };
     },
     message: async (parent, { id }, { models }) => {
-      return await models.Message.findById(id);
+      return await models.Message.findByPk(id);
     },
   },
 
